@@ -20,13 +20,13 @@ export class RequestHandler {
   body: Record<string, string>;
   query: Record<string, string>;
   res: Response;
-  constructor(req: Request) {
+  constructor(req: Request, res: Response) {
     this.req = req;
     this.headers = req.headers as Record<string, string>;
     this.params = {};
     this.body = {};
     this.query = {};
-    this.res = {};
+    this.res = res;
   }
   /**
    * 获取请求头
@@ -206,6 +206,6 @@ export class RequestHandler {
    * xhr
    */
   xhr(): boolean {
-    return this.header('x-requested-with') === 'XMLHttpRequest';
+    return this.header('X-Requested-With') === 'XMLHttpRequest';
   }
 }
