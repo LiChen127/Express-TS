@@ -1,24 +1,48 @@
+'use strict';
 /**
- * 工具类
+ * Utility class for object operations
+ * Provide static methods for object
  */
-
-class UtilsForExpress {
+class Utils {
   /**
-   * @description 合并参数
-   * @param {any[]} params 参数
-   * @param {any} parent 父级参数
-   * @returns {any[]} 合并后的参数
+   * Mixin property descriptors from the source object into the destination object
+   * @param destination - Destination object
+   * @param source - Source object
+   * @param overwrite - Overwrite flag
+   * @returns Mixed object
+   * @throws TypeError if destination or source is not provided
    */
-  static mixin(params: any, parent: any): any {
-    if (parent && params) {
-      for (const key in parent) {
-        if (params[key] === undefined) {
-          params[key] = parent[key];
-        }
-      }
+  static mixin<T extends object, U extends object>(destination: T, source: U, overwrite = true): T & U {
+    if (!destination) {
+      throw new TypeError('The `destination` argument is required.');
     }
-    return params;
+    if (!source) {
+      throw new TypeError('The `source` argument is required.');
+    }
+    /**
+     * Mixin property descriptors from the source object into the destination object
+     */
+    for (const name of Object.getOwnPropertyNames(source)) {
+      if (!overwrite && Object.prototype.hasOwnProperty.call(destination, name)) {
+        continue;
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(source, name);
+      Object.defineProperty(destination, name, descriptor!);
+    }
+    /**
+     * Mixin property descriptors from the source object into the destination object
+     */
+    for (const symbol of Object.getOwnPropertySymbols(source)) {
+      if (!overwrite && Object.prototype.hasOwnProperty.call(destination, symbol)) {
+        continue;
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(source, symbol);
+      Object.defineProperty(destination, symbol, descriptor!);
+    }
+    return destination as T & U;
   }
 }
 
-export default UtilsForExpress;
+const mixin = Utils.mixin;
+
+export { mixin };
