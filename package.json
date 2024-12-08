@@ -1,0 +1,13 @@
+{
+  "name": "express-like",
+  "version": "1.0.0",
+  "description": "Express-like framework implementation",
+  "main": "index.js",
+  "dependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.9.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
