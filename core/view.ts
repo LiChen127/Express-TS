@@ -97,7 +97,7 @@ export class View {
    * @param callback 回调函数
    * @returns 渲染结果
    */
-  private render(options: any, callback: Function): any {
+  public render(options: any, callback: Function): any {
     this.engine(this.path, options, callback);
   }
 
@@ -107,7 +107,7 @@ export class View {
    * @param file 文件
    * @returns 路径
    */
-  private resolve(dir: string, file: string): string {
+  public resolve(dir: string, file: string): string {
     const ext = this.ext;
     let path = join(dir, file);
     let stat = this.tryStat(path);
