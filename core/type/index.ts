@@ -12,9 +12,29 @@ export interface Request extends IncomingMessage {
   params?: any;
   path?: string;
   pathname?: string;
+  hostname?: string;
   set?: (key: string, value: any) => void;
   get?: (key: string) => any;
+  header(name: string): string | undefined;
+  accepts(...types: string[]): string | false | string[] | undefined;
+  acceptsEncodings(...encodings: string[]): string | string[] | undefined;
+  acceptsEncoding(...encodings: string[]): string | string[] | undefined;
+  acceptsCharsets(...charsets: string[]): string | string[] | undefined;
+  acceptsCharset(...charsets: string[]): string | string[] | undefined;
+  acceptsLanguages(...langs: string[]): string | string[] | undefined;
+  acceptsLanguage(...langs: string[]): string | string[] | undefined;
+  range(size: number, options?: { combine?: boolean }): number | Range[] | undefined;
+  param(name: string, defaultValue?: any): any;
+  is(...types: string[]): string | false | null;
+  protocol: string;
+  secure: boolean;
+  ip: string;
+  ips: string[];
+  subdomains: string[];
+
 }
+
+type Range = { start: number; end: number };
 
 /** 响应对象类型 */
 export interface Response extends ServerResponse {
