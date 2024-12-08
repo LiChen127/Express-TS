@@ -14,6 +14,8 @@ import merge from 'utils-merge';
 import escapeHtml from 'escape-html';
 import { View } from '../view';
 import { send } from 'send';
+import { nextTick, on } from 'process';
+import onfinished from 'on-finished';
 
 const charsetRegExp = /;\s*charset\s*=/;
 
@@ -53,15 +55,6 @@ export class ResponseHandler {
   /**
    * 获取状态码
    */
-  // get status(): number {
-  //   const code = this.res.statusCode;
-  //   if (typeof code === 'number' && Math.floor(code) === code && code > 99 && code < 1000) {
-  //     // return code;
-  //     throw new Error('Invalid status code');
-  //   }
-  //   // return 404;
-
-  // }
   status(code: number): this {
     if (typeof code === 'number' && Math.floor(code) === code && code > 99 && code < 1000) {
       throw new Error('Invalid status code');
@@ -303,7 +296,7 @@ export class ResponseHandler {
   /**
    * 传输给定 path 的文件
    */
-  sendFile(path: string, options: Record<string, any> = {}, callback?: (err: Error | null, data: Buffer | string) => void): this {
+  sendFile(path: string, options: Record<string, any> = {}, callback?: (err: Error | null, data: Buffer | string) => void) {
     let cb = callback
     const req = this.req;
     const res = this.res;
@@ -328,11 +321,8 @@ export class ResponseHandler {
       cb = opts as (err: Error | null, data: Buffer | string) => void;
       opts = {};
     }
-    // const file = this.res.send(req, pathname, opts);
-    const file = send(req, pathname, opts);
 
-    // next(file);
-    return this;
+    const file = send(req, pathname, opts);
   }
 
   /**
@@ -343,7 +333,7 @@ export class ResponseHandler {
    * @param {Function} callback 回调函数
    * @returns {this}
    */
-  download(path: string, filename: string | null | object, options: Record<string, any> = {}, callback?: (err: Error | null, data: Buffer | string) => void): this {
+  download(path: string, filename: string | null | object, options: Record<string, any> = {}, callback?: (err: Error | null, data: Buffer | string) => void) {
     let cb = callback;
     const req = this.req;
     const res = this.res;
@@ -379,6 +369,101 @@ export class ResponseHandler {
     opts = Object.create(opts);
     opts!.headers = headers;
     return this.sendFile(path, opts!, cb);
+  }
+  /**
+   * 管道发送文件流
+   * @param res 
+   * @param file 
+   * @param options 
+   * @param callback 
+   */
+  private sendfile(res: Response, file: any, options: Record<string, any>, callback?: (err?: Error | null, data?: Buffer | string) => void) {
+    let done = false;
+    let streaming: boolean;
+
+    // function onaborted() {
+
+    // }
+    const onaborted = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      const err = new Error('Request aborted');
+      (err as any).code = 'ECONNABORTED';
+      callback!(err);
+    }
+
+    const ondirectory = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      const err = new Error('Request aborted');
+      (err as any).code = 'EISDIR';
+      callback!(err);
+    }
+
+    const onend = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      callback!();
+    }
+
+    const onerror = (err: Error) => {
+      if (done) {
+        return;
+      }
+      done = true;
+      callback!(err);
+    }
+
+    const onfile = () => {
+      streaming = false;
+    }
+
+    const onfinish = (err?: Error) => {
+      if (err && (err as any).code === 'ECONNRESET') return onaborted();
+      if (err) return onerror(err);
+      if (done) return;
+      // onend();
+      nextTick(() => {
+        if (streaming && !done) {
+          onaborted();
+          return;
+        }
+
+        if (done) {
+          return;
+        }
+        done = true;
+        callback!();
+      });
+    }
+
+    const onstream = () => {
+      streaming = true;
+    }
+
+    file.on('directory', ondirectory);
+    file.on('end', onend);
+    file.on('error', onerror);
+    file.on('file', onfile);
+    file.on('finish', onfinish);
+    file.on('stream', onstream);
+    onfinished(res, onfinish as (err: Error | null, msg: Response) => void);
+
+    if (options.headers) {
+      const keys = Object.keys(options.headers);
+      keys.forEach((key) => {
+        this.set(key, options.headers[key]);
+      });
+    }
+
+    // 管道
+    file.pipe(res);
   }
   /**
    * format
