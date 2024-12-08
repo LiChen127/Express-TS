@@ -3,48 +3,33 @@
  */
 
 import { IncomingMessage, ServerResponse } from 'http';
+
+export interface Application {
+  get(setting: string): any;
+  set(setting: string, value: any): this;
+  enabled(setting: string): boolean;
+  disabled(setting: string): boolean;
+  enable(setting: string): this;
+  disable(setting: string): this;
+}
+
 /** 请求对象类型 */
 export interface Request extends IncomingMessage {
-  baseUrl?: string;
-  originalUrl?: string;
+  app?: Application;
   body?: any;
   query?: any;
   params?: any;
+  baseUrl?: string;
+  originalUrl?: string;
   path?: string;
-  pathname?: string;
   hostname?: string;
-  set?: (key: string, value: any) => void;
-  get?: (key: string) => any;
-  header(name: string): string | undefined;
-  accepts(...types: string[]): string | false | string[] | undefined;
-  acceptsEncodings(...encodings: string[]): string | string[] | undefined;
-  acceptsEncoding(...encodings: string[]): string | string[] | undefined;
-  acceptsCharsets(...charsets: string[]): string | string[] | undefined;
-  acceptsCharset(...charsets: string[]): string | string[] | undefined;
-  acceptsLanguages(...langs: string[]): string | string[] | undefined;
-  acceptsLanguage(...langs: string[]): string | string[] | undefined;
-  range(size: number, options?: { combine?: boolean }): number | Range[] | undefined;
-  param(name: string, defaultValue?: any): any;
-  is(...types: string[]): string | false | null;
-  protocol: string;
-  secure: boolean;
-  ip: string;
-  ips: string[];
-  subdomains: string[];
-
 }
-
-type Range = { start: number; end: number };
 
 /** 响应对象类型 */
 export interface Response extends ServerResponse {
-  set?: (key: string, value: any) => void;
-  get?: (key: string) => any;
-  send?: (body: any) => void;
-  sendOptions?: (options: any[], done: Function) => void;
-  sendError?: (err: any) => void;
-  sendNotFound?: () => void;
-  sendServerError?: (err: any) => void;
+  app?: Application;
+  locals?: any;
+  getHeader(name: string): string | number | string[] | undefined;
 }
 
 // /** Next 函数类型 */

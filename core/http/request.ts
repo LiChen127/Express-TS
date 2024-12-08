@@ -11,201 +11,128 @@ import fresh from 'fresh';
 import parseRange from 'range-parser';
 import parse from 'parseurl';
 import proxyaddr from 'proxy-addr';
-import { Request, Response } from '../type/index';
+import { TLSSocket } from 'tls';
+import { Request, Response, Application } from '../type/index';
 
 export class RequestHandler {
-  req: Request;
-  headers: Record<string, string>;
-  params: Record<string, string>;
-  body: Record<string, string>;
-  query: Record<string, string>;
-  res: Response;
+  private req: Request;
+  private res: Response;
+
   constructor(req: Request, res: Response) {
     this.req = req;
-    this.headers = req.headers as Record<string, string>;
-    this.params = {};
-    this.body = {};
-    this.query = {};
     this.res = res;
   }
+
   /**
    * 获取请求头
-   * @param name 
-   * @returns 
    */
-  header(name: string): string | undefined | string[] {
-    if (!name) {
-      throw new Error('name is required');
-    }
-
-    if (typeof name !== 'string') {
-      throw new Error('name must be a string');
-    }
-
+  header(name: string): string | string[] | undefined {
     const lc = name.toLowerCase();
-
     switch (lc) {
       case 'referer':
       case 'referrer':
         return this.req.headers.referer || this.req.headers.referrer;
       default:
-        return this.headers[lc];
+        return this.req.headers[lc];
     }
   }
 
-  accepts(...types: string[]) {
-    const accept = accepts(this.req);
-    return accept.types(...types);
-  }
-
   /**
-   * 返回接收给定的编码形式
-   */
-  acceptsEncoding(...encodings: string[]) {
-    const accept = accepts(this.req);
-    return accept.encodings(...encodings);
-  }
-
-  /**
-   * 返回接受给定的字符集
-   */
-  acceptsCharset(...charsets: string[]) {
-    const accept = accepts(this.req);
-    return accept.charsets(...charsets);
-  }
-
-  /**
-   * 返回接受给定的语言
-   */
-  acceptsLanguage(...langs: string[]) {
-    const accept = accepts(this.req);
-    return accept.languages(...langs);
-  }
-
-  /**
-   * 解析范围头
-   * @param {number} size 大小
-   * @param {object} [options] 选项
-   * @param {boolean} [options.combine=false] 是否合并
-   * @returns {number|Array} 返回范围数组或数字
-   * @public
-   */
-  range(size: number, options?: { combine: boolean }): number | Array<[number, number]> | null {
-    const range = this.header('range');
-    if (!range) {
-      return null;
-    }
-    return parseRange(size, range, options);
-  }
-  /**
-   * 获取请求参数
-   * @param {String} name 键
-   * @param {Mixed} [defaultValue]
-   * @return {String}
-   * @public
-   */
-  param(name: string, defaultValue?: any): any {
-    const params = this.params;
-    const body = this.body;
-    const query = this.query;
-
-    if (params[name] && params.hasOwnProperty(name)) {
-      return params[name];
-    }
-
-    if (body[name] && body.hasOwnProperty(name)) {
-      return body[name];
-    }
-
-    if (query[name]) {
-      return query[name];
-    }
-
-    return defaultValue;
-  }
-
-  /**
-   * 检查请求是否接受给定的类型
-   * @param {String|Array} types...
-   * @return {String|false|null}
-   * @public
-   */
-  is(types: string | string[]) {
-    const arr = Array.isArray(types) ? types : [...arguments];
-    return typeis(this.req, arr);
-  }
-  /**
-   * 获取协议字符串 'http' 或 'https'
+   * 获取协议
    */
   get protocol(): string {
-    const proto = this.req.connection?.encrypted ? 'https' : 'http';
-    const trust = this.req.app.get('trust proxy fn');
-    if (!trust || !trust(this.req.connection?.remoteAddress, 0)) {
+    const proto = (this.req.socket as TLSSocket).encrypted ? 'https' : 'http';
+
+    if (!this.app?.get('trust proxy fn')) {
       return proto;
     }
 
-    const header = this.req.headers['x-Forwarded-Proto'] || proto;
-    let index = header.indexOf(',');
-    return index !== -1 ? (header as string).substring(0, index).trim() : (header as string).trim();
+    const header = this.header('X-Forwarded-Proto') || proto;
+    const index = header.indexOf(',');
+    return index !== -1
+      ? (header as string).substring(0, index).trim()
+      : (header as string).trim();
   }
+
   /**
-   * 判断是否为安全连接(https)
-   */
-  get secure(): boolean {
-    return this.protocol === 'https';
-  }
-  /**
-   * 获取请求的IP地址
+   * 获取IP地址
    */
   get ip(): string {
-    // return this.req.connection?.remoteAddress || '';
-    const trust = this.req.app.get('trust proxy fn');
-    return proxyaddr(this.req, trust);
+    return this.ips[0] || this.req.socket.remoteAddress || '';
   }
+
   /**
-   * 获取请求的子域名
+   * 获取所有IP地址
+   */
+  get ips(): string[] {
+    const value = this.header('X-Forwarded-For');
+    return value
+      ? (value as string).split(',').map(ip => ip.trim())
+      : [];
+  }
+
+  /**
+   * 获取主机名
+   */
+  get hostname(): string {
+    let host = this.header('X-Forwarded-Host') as string;
+    if (!host || !this.app?.get('trust proxy')) {
+      host = this.header('Host') as string;
+    }
+
+    if (!host) return '';
+
+    const offset = host[0] === '[' ? host.indexOf(']') + 1 : 0;
+    const index = host.indexOf(':', offset);
+    return index !== -1
+      ? host.substring(0, index)
+      : host;
+  }
+
+  /**
+   * 获取子域名
    */
   get subdomains(): string[] {
-    const hostname = this.req.hostname;
-    if (!hostname) {
-      return [];
-    }
-    const offset = this.req.app?.get('subdomain offset') || 2;
+    const hostname = this.hostname;
+    if (!hostname || isIP(hostname)) return [];
+
+    const offset = this.app?.get('subdomain offset') || 2;
     return hostname.split('.').reverse().slice(offset);
   }
+
   /**
-   * 检查请求是否为新鲜请求
+   * 检查内容是否新鲜
    */
   get fresh(): boolean {
     const method = this.req.method;
-    const res = this.res;
-    const status = res.statusCode;
+    const status = this.res.statusCode;
 
-    if (method !== 'GET' && method !== 'HEAD') {
-      return false;
-    }
-
-    // return fresh(this.req.headers, { status, 'content-type': res.get('content-type') });
-
-    if ((status >= 200 && status < 300) || status === 304) {
-      return fresh(this.headers, {
-        'etag': res.get('ETag'),
-        'last-modified': res.get('Last-Modified')
-      })
+    if ('GET' !== method && 'HEAD' !== method) return false;
+    if ((status >= 200 && status < 300) || 304 === status) {
+      return fresh(this.req.headers, {
+        'etag': this.res.getHeader('ETag'),
+        'last-modified': this.res.getHeader('Last-Modified')
+      });
     }
     return false;
   }
 
   /**
-   * 检查请求是否过时
+   * 获取请求参数
    */
-  get stale(): boolean {
-    return !this.fresh;
+  param(name: string, defaultValue?: any): any {
+    const params = this.req.params || {};
+    const body = this.req.body || {};
+    const query = this.req.query || {};
+
+    if (params[name] != null) return params[name];
+    if (body[name] != null) return body[name];
+    if (query[name] != null) return query[name];
+
+    return defaultValue;
   }
-  /**
-   * xhr
-   */
-  xhr(): boolean {
-    return this.header('X-Requested-With') === 'XMLHttpRequest';
+
+  private get app(): Application | undefined {
+    return this.req.app;
   }
 }
