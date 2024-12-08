@@ -9,8 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "rootDir": "./",
-    "declaration": true
+    "declaration": true,
+    "types": ["node_modules/@types"]
   },
+  "types": ["node"],
+  "esModuleInterop": true,
+  "resolveJsonModule": true,
   "include": ["core/**/*"],
   "exclude": ["node_modules", "dist"]
 }

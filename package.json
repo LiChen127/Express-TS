@@ -4,11 +4,17 @@
   "description": "Express-like framework implementation",
   "main": "index.js",
   "dependencies": {
-    "@types/node": "^18.0.0",
     "array-flatten": "^3.0.0",
+    "content-type": "^1.0.5",
+    "etag": "^1.8.1",
+    "mime": "^4.0.4",
+    "proxy-addr": "^2.0.7",
+    "querystring": "^0.2.1",
+    "safe-buffer": "^5.2.1",
     "typescript": "^4.9.0"
   },
   "devDependencies": {
+    "@types/node": "^22.10.1",
     "ts-node": "^10.9.1"
   }
 }
