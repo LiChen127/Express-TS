@@ -5,60 +5,30 @@
 import { IncomingMessage, ServerResponse } from 'http';
 /** 请求对象类型 */
 export interface Request extends IncomingMessage {
-  /** 请求路径 */
-  url: string;
-  /** BASEURL */
-  baseUrl: string;
-  /** 原始URL */
-  originalUrl: string;
-  /** 请求方法 */
-  method: string;
-  /** 请求头 */
-  headers: any;
-  /** 请求体 */
-  body: any;
-  /** 请求参数 */
-  query: any;
-  /** 请求参数 */
-  params: any;
-  /** 请求参数 */
-  path: string;
-  /** 请求路径 */
-  pathname: string;
-  /** set方法  */
-  set: (key: string, value: any) => void;
-  /** get方法 */
-  get: (key: string) => any;
-  /** 添加方法 */
-  // appendMethods: (methods: string[]) => void;
-  next: NextFunction;
+  baseUrl?: string;
+  originalUrl?: string;
+  body?: any;
+  query?: any;
+  params?: any;
+  path?: string;
+  pathname?: string;
+  set?: (key: string, value: any) => void;
+  get?: (key: string) => any;
 }
 
 /** 响应对象类型 */
 export interface Response extends ServerResponse {
-  /** set方法 */
-  set: (key: string, value: any) => void;
-  /** get方法 */
-  get: (key: string) => any;
-  /** send方法 */
-  send: (body: any) => void;
-  /** 发送OPTIONS 响应 */
-  sendOptions: (options: any[], done: Function) => void;
-  /** 发送错误响应 */
-  sendError: (err: any) => void;
-  /** 发送404响应 */
-  sendNotFound: () => void;
-  /** 发送500响应 */
-  sendServerError: (err: any) => void;
-  /** next方法 */
-  next: NextFunction;
+  set?: (key: string, value: any) => void;
+  get?: (key: string) => any;
+  send?: (body: any) => void;
+  sendOptions?: (options: any[], done: Function) => void;
+  sendError?: (err: any) => void;
+  sendNotFound?: () => void;
+  sendServerError?: (err: any) => void;
 }
 
-/** Next 函数类型 */
-export type NextFunction = {
-  (err?: any): void;
-  restore: (options: any, ...keys: string[]) => () => void;
-}
+// /** Next 函数类型 */
+export type NextFunction = (err?: any) => void;
 
 /** 请求处理器类型 */
 export type RequestHandler = (req: Request, res: Response, next: NextFunction) => void;
@@ -67,4 +37,15 @@ export interface RestoreFunction {
   fn: Function;
   obj: any;
   keys: string[];
+}
+
+export interface ViewOptions {
+  /** 默认模板引擎的名称 */
+  defaultEngine?: string;
+  /** 默认引擎缓存对象 */
+  engines: Record<string, any>;
+  /** 视图文件的根目录 */
+  root?: string[];
+  /** 视图文件的扩展名 */
+  ext?: string;
 }
