@@ -3,6 +3,7 @@
  */
 
 import { IncomingMessage, ServerResponse } from 'http';
+import { View } from '../view';
 
 export interface Application {
   get(setting: string): any;
@@ -11,6 +12,7 @@ export interface Application {
   disabled(setting: string): boolean;
   enable(setting: string): this;
   disable(setting: string): this;
+  render(view: View, options: Record<string, any>, callback?: (err: Error | null, str: string) => void): void;
 }
 
 /** 请求对象类型 */
@@ -23,6 +25,10 @@ export interface Request extends IncomingMessage {
   originalUrl?: string;
   path?: string;
   hostname?: string;
+  fresh?: boolean;
+  next?: NextFunction;
+  get(field: string): string | number | string[] | undefined;
+  accepts(types: string | string[]): string | false | undefined;
 }
 
 /** 响应对象类型 */
@@ -30,6 +36,7 @@ export interface Response extends ServerResponse {
   app?: Application;
   locals?: any;
   getHeader(name: string): string | number | string[] | undefined;
+
 }
 
 // /** Next 函数类型 */

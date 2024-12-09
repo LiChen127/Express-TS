@@ -7,8 +7,7 @@
 import { RouterPrototype, RouteOptions } from './type/route';
 import { Request, Response, NextFunction, RestoreFunction } from '../type/index';
 import { nextTick } from 'process';
-// import { mixin } from '../utils/index';
-import UtilsForExpress from '../utils/index';
+import { mixin } from '../utils/index';
 // import flatten from 'array-flatten';
 /**
  * 定义工具变量和函数
@@ -445,9 +444,9 @@ export default class Router implements RouterPrototype {
     /**
      * 混入parent到obj
      */
-    const obj = UtilsForExpress.mixin({}, parent);
+    const obj = mixin({}, parent);
     if (!(0 in params) || !(0 in parent)) {
-      return UtilsForExpress.mixin(obj, params);
+      return mixin(obj, params);
     }
     const paramsLen = params.length;
     const parentLen = parent.length;
@@ -467,7 +466,7 @@ export default class Router implements RouterPrototype {
         delete params[i];
       }
     }
-    return UtilsForExpress.mixin(obj, params);
+    return mixin(obj, params);
   }
   /**
    * 获取协议和主机

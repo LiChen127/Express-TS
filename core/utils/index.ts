@@ -79,7 +79,7 @@ class Utils {
    * @param {String} type
    * @return {Object}
    */
-  static normalizeContentType(type: string): Object {
+  static normalizeContentType(type: string) {
     return ~type.indexOf('/')
       ? Utils.acceptParams(type)
       : { value: mime.getType(type) || 'application/octet-stream', params: {} };
