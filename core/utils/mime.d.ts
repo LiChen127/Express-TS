@@ -6,4 +6,6 @@ declare module 'mime' {
     type: string;
     parameters: Record<string, string>;
   };
+  export const charset: Record<string, string>;
+  export const lookup: Record<string, string>;
 }

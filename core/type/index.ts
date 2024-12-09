@@ -19,7 +19,7 @@ export interface Application {
 export interface Request extends IncomingMessage {
   app?: Application;
   body?: any;
-  query?: any;
+  query?: string;
   params?: any;
   baseUrl?: string;
   originalUrl?: string;

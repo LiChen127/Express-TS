@@ -7,7 +7,7 @@ import contentType from 'content-type';
 import { Buffer } from 'buffer';
 import mime from 'mime';
 import vary from 'vary';
-import statuses, { code } from 'statuses';
+import statuses from 'statuses';
 import { normalizeContentType, setCharset } from '../utils/index';
 import { contentDisposition } from 'content-disposition';
 import merge from 'utils-merge';
@@ -33,7 +33,26 @@ export class ResponseHandler {
   /**
    * 获取响应头
    */
-  header(field: string): string | number | string[] | undefined {
+  header(field: string, val?: string | number | string[]): string | number | string[] | undefined {
+    if (arguments.length === 2) {
+      let value = Array.isArray(val) ? val.map(String) : String(val);
+
+      if (field.toLowerCase() === 'content-type') {
+        if (Array.isArray(value)) {
+          throw new Error('Content-Type cannot be set to an array');
+        }
+        if (!charsetRegExp.test(value)) {
+          const charset = mime.charset(value);
+          if (charset) {
+            value += '; charset=' + charset.toLowerCase();
+          }
+        }
+      }
+      this.res.setHeader(field, value);
+    } else {
+      this.res.setHeader(field, field);
+    }
+
     return this.res.getHeader(field);
   }
 
@@ -272,7 +291,6 @@ export class ResponseHandler {
     }
 
     if (typeof callback === 'string' && callback.length) {
-      // this.send(`/**/ typeof ${callback} === 'function' && ${callback}(${body});`);
       this.set('X-Content-Type-Options', 'nosniff');
       this.set('Content-Type', 'application/javascript');
       /**
@@ -527,9 +545,6 @@ export class ResponseHandler {
         body = '';
       }
     })
-    // // 设置重定向头
-    // this.status(status);
-    // this.set('Location', address);
     this.status(status);
 
     this.set('Content-Length', Buffer.byteLength.toString());
@@ -572,7 +587,6 @@ export class ResponseHandler {
       opts.path = '/';
     }
 
-    // this.append('Set-Cookie', this.serializeCookie(name, val, options));
     this.append('Set-Cookie', this.serializeCookie(name, val, opts));
     return this;
   }

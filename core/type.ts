@@ -36,7 +36,7 @@ export interface Response extends ServerResponse {
 export type NextFunction = (err?: any) => void;
 
 /** 请求处理器类型 */
-export type RequestHandler = (req: Request, res: Response, next: NextFunction) => void;
+export type RequestHandler = (error: any, req: Request, res: Response, next: NextFunction) => void;
 
 export interface RestoreFunction {
   fn: Function;
