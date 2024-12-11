@@ -22,10 +22,24 @@ export default class Route {
    * 添加处理方法
    */
   public _handles_method(method: string): boolean {
-    const name = method.toLowerCase();
+    if (this.methods._all) {
+      return true;
+    }
+
+    let name = typeof method === 'string' ? method.toLowerCase() : '';
+
+    if (name === 'head' && !this.methods['head']) {
+      name = 'get';
+    }
+
     return Boolean(this.methods[name]);
   }
 
+  options() {
+    const methods = Object.keys(this.methods);
+
+    0
+  }
   /**
    * 添加中间件
    */

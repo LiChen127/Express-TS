@@ -3,24 +3,29 @@
  * 管理路由注册和匹配
  * 管理路由中间件
  */
-// import { deprecate } from 'util';
-import { RouterPrototype, RouteOptions } from './type/route';
+
+
 import { Request, Response, NextFunction, RestoreFunction } from '../type/index';
 import { nextTick } from 'process';
 import { mixin } from '../utils/index';
-// import flatten from 'array-flatten';
-/**
- * 定义工具变量和函数
- */
+// import setPrototypeOf from 'setprototypeof';
+import flatten from 'array-flatten';
+import Layer from './layer';
+import parseurl from 'parseurl';
+import methods from 'methods';
+import route from './route';
 
 const objectRegExp = /^\[object (\S+)]\$/;
 const slice = Array.prototype.slice;
 const toString = Object.prototype.toString;
+const setPrototypeOf = Object.setPrototypeOf;
+
 function isObject(val: any): boolean {
   return toString.call(val) === '[object Object]';
 }
 
-export default class Router implements RouterPrototype {
+
+export default class {
   private options: RouteOptions = {};
   /**
    * 初始化参数
@@ -517,7 +522,6 @@ export default class Router implements RouterPrototype {
   private restore(fn: Function, obj: any, ...keys: string[]): () => void {
     const props = keys;
     const vals = keys.map(key => obj[key]);
-
     return function (this: any, ...args: any[]) {
       props.forEach((prop, index) => {
         obj[prop] = vals[index];
